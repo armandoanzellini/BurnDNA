@@ -12,11 +12,11 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 from sklearn.cross_decomposition import PLSRegression
 
-sys.path.insert(0, 'D:\\Users\\Armando\\OneDrive\\Documents\\Python Scripts\\IsoSpec\\')
-from SpecCalcMod import amIPO4
+#sys.path.insert(0, 'D:\\Users\\Armando\\OneDrive\\Documents\\Python Scripts\\IsoSpec\\')
+from SpecCalcMod import amIPO4area as amIPO4
 
 direct = "D:\\Users\\Armando\\OneDrive\\Documents\\AuthorPapers (in progress)\\Burn DNA\\Data\\CSV\\"
-folder = "Solid"
+folder = "Powder"
 
 os.chdir(direct + folder)
 
