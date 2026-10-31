@@ -10,7 +10,11 @@ jobs:
         with:
           python-version: "3.14"
           cache: pip
-      - run: pip install -e .[dev]
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy
+          pip install -e .[dev]
       - run: pytest -v
         env:
           MPLBACKEND: Agg   # no display on CI, so plt.show() won't hang
