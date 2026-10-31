@@ -28,8 +28,7 @@ jobs:
         pip install numpy --no-build-isolation
         pip install -e .[dev] --no-build-isolation
     - name: Run tests
-      run: |
-        python -m pytest
+      run: python -m pytest -v
       env:
         MPLBACKEND: Agg
   build:
