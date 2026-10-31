@@ -1,6 +1,6 @@
 [project]
 name = "burn-dna-analysis"
-version = "0.1"
+version = "0.1.0"
 description = "Python codebase for bioarchaeological DNA preservation analysis using FTIR, Raman, spectroscopy, and image processing."
 readme = "README.md"
 requires-python = ">=3.11"
