@@ -1,0 +1,104 @@
+"""
+# Neither PCA nor LDA provide good solutions
+def run_LDA(data, target):
+    X = data.iloc[:,8:].to_numpy()
+    y = data[target]
+    
+    pca = PCA(n_components=2)
+    X_r = pca.fit(X).transform(X)
+    
+    # lda = LinearDiscriminantAnalysis(n_components=1)
+    # X_r = lda.fit(X, y).transform(X)
+    
+    # figure out best number of components
+    for color, i, target_name in zip(['k', 'green'], [0, 1], ['Negative', 'Possible']):
+        plt.scatter(
+            X_r[y == i, 0], X_r[y == i, 1], alpha=0.8,
+            color=color,
+            label=target_name)
+
+    plt.legend(loc="best", shadow=False, scatterpoints=1)
+    
+    # plt.scatter(y, X_r2, alpha=0.5, color=color)
+    plt.title('Whole Spectrum: ' + target)
+    plt.xlabel('PC1')
+    plt.ylabel('PC2')
+    
+    plt.show()
+    
+run_LDA(pwdna, 'Allele_Cat')
+
+# Trying Logistic Regression (also didn't work)
+for cat in ['Allele_Cat', 'Qty_Cat']:
+    x = pwdna.iloc[:,8:] 
+    y = pwdna[cat]
+    
+    # reduce dimensionality first
+    pca = PCA(n_components=1)
+    X_r = pca.fit(x).transform(x)
+    
+    # add a constant for intercept of logit
+    X = sm.add_constant(X_r)
+    
+    model = sm.Logit(y, X)
+    
+    result = model.fit(method='newton')
+    
+    conf_matrix = result.pred_table()
+    
+    print(result.summary2())
+    
+    print(conf_matrix)
+    
+    TP = conf_matrix[0][0]
+    TN = conf_matrix[1][1]
+    FN = conf_matrix[0][1]
+    FP = conf_matrix[1][0]
+    
+    Sensitivity = TP / (TP + FN)
+    Specificity = TN / (TN + FP)
+    
+    PPV = TP / (TP + FP)
+    NPV = TN / (TN + FN)
+    
+    # create x for plotting
+    line_x    = np.linspace(x_min := X.min(), x_max := X.max())
+    
+    # plot
+    fig, ax = plt.subplots()
+    
+    # plot binarized data and logistic function from prediction
+    ax.scatter(X_r, y, c='k', alpha=0.5)
+    ax.plot(line_x, result.predict(sm.add_constant(line_x)), 'k', linestyle = '--')
+    
+    if cat == 'Allele_Cat':
+        y_label = 'Allele Recovery'
+    else:
+        y_label = 'DNA Extraction Quantity'
+        
+    x_label = 'PC 1'
+
+    ax.set_title('ATR-FTIR Logistic Regression on DNA', family='serif')
+    ax.set_ylabel(y_label, family='serif')
+    ax.set_xlabel(x_label, family='serif')
+    
+    func = f"{result.params['const']: .2f} + {result.params['x1']: .2f}x"
+    
+    ax.annotate(f'Odds = e$^{{{func}}}$',
+                xy=(1e11, .2),  xycoords='data', family="serif", fontsize=12)
+    ax.annotate(f'Sensitivity = {Sensitivity: .2f}',
+                xy=(1e11, .12),  xycoords='data', family="serif")
+    ax.annotate(f'Specificity = {Specificity: .2f}',
+                xy=(1e11, .045),  xycoords='data', family="serif")
+    
+    
+    plt.savefig(rf'C:\Users\arman\Desktop\Flourescence Figures\PCALogit_{cat}.png')
+    # plt.show()
+    
+
+Separate the brown and ref from the black and calcine for the analyses again
+see if the allele and qty are correlated and how strong (Nope)
+See if any calcine had good DNA (Yes! at least 2 of the 10, with 1 having good Allele)
+Same for Carbonized (Yes! at least 7 have Qty and 2 have good allele [Qty of 1 is 11.5])
+Make qualitative wALKER 2008
+"""

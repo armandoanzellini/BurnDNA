@@ -1,0 +1,45 @@
+[project]
+name = "burn-dna-analysis"
+version = "0.1"
+description = "Python codebase for bioarchaeological DNA preservation analysis using FTIR, Raman, spectroscopy, and image processing."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "Armando Anzellini"}]
+license = "BSD-3-Clause"
+classifiers = []
+dependencies = [
+    "arviz>=0.19.0",
+    "matplotlib>=3.8.0",
+    "numpy>=1.26.0",
+    "opencv-python>=4.8.0",
+    "openpyxl>=3.1.0",
+    "pandas>=2.1.0",
+    "pyspectra>=0.1.0",
+    "pymc>=5.10.0",
+    "scikit-learn>=1.3.0",
+    "scipy>=1.11.0",
+    "statsmodels>=0.14.0"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4.0"
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["FinalCode*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "FinalCode"]
+
+[project.urls]
+Homepage = "https://github.com/armandoanzellini/burn-dna-analysis"
+Changelog = "https://github.com/armandoanzellini/burn-dna-analysis/releases"
+Issues = "https://github.com/armandoanzellini/burn-dna-analysis/issues"
+CI = "https://github.com/armandoanzellini/burn-dna-analysis/actions"

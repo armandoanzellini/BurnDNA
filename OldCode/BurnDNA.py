@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 from sklearn.cross_decomposition import PLSRegression
 
-#sys.path.insert(0, 'D:\\Users\\Armando\\OneDrive\\Documents\\Python Scripts\\IsoSpec\\')
+sys.path.insert(0, 'C:\\Users\\arman\\OneDrive\\Documents\\Python Scripts\\IsoSpec\\')
 from SpecCalcMod import amIPO4area as amIPO4
 
-direct = "D:\\Users\\Armando\\OneDrive\\Documents\\AuthorPapers (in progress)\\Burn DNA\\Data\\CSV\\"
+direct = "C:\\Users\\arman\\OneDrive\\Documents\\AuthorPapers (in progress)\\Burn DNA\\Data\\CSV\\"
 folder = "Powder"
 
 os.chdir(direct + folder)
@@ -59,8 +59,8 @@ for Y in df.columns.to_list()[1:]:
     ax.xaxis.set_minor_locator(AutoMinorLocator())
     ax.yaxis.set_minor_locator(AutoMinorLocator())
     
-    #plt.savefig(f'Spectrum_{Y}.png', dpi=300)
-    plt.show()
+    plt.savefig(f'Spectrum_{Y}.png', dpi=300)
+    #plt.show()
 
 apr_dict = {} # create dictionary of ratio values to add to DNA quant dataframe
 
