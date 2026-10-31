@@ -16,6 +16,7 @@ jobs:
           pip install numpy setuptools wheel
           pip install numpy --no-build-isolation
           pip install -e .[dev] --no-build-isolation
-      - run: python -m pytest -v
+      - run: pip install -e . pytest 
+      - run: pytest -v
         env:
           MPLBACKEND: Agg   # no display on CI, so plt.show() won't hang
