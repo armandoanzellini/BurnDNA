@@ -1,22 +1,30 @@
 name: tests
+
 on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: ${{ matrix.python-version }}
           cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install numpy setuptools wheel
-          pip install numpy --no-build-isolation
-          pip install -e .[dev] --no-build-isolation
-      - run: pip install -e . pytest 
-      - run: pytest -v
+          # spc-spectra (via pyspectra) imports numpy in setup.py, so it cannot
+          # build under pip's isolated build env; install build deps first
+          pip install numpy "setuptools>=77" wheel
+          pip install -e ".[dev]" --no-build-isolation
+      - name: Run tests
+        run: python -m pytest -v
         env:
-          MPLBACKEND: Agg   # no display on CI, so plt.show() won't hang
+          MPLBACKEND: Agg  # no display on CI, so plt.show() won't hang

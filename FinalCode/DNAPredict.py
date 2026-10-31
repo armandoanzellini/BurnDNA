@@ -11,23 +11,21 @@ import os
 import re
 import sys
 import glob
+import json
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from pathlib import Path
 from pyspectra.readers.read_spc import read_spc
 
 sys.path.append(r"C:\Users\arman\OneDrive\Documents\Python Scripts\BurnDNA")
 
 import SpecCalcMod as scm
 
-# Location of SPC files
-direct  = r"C:\Users\arman\Downloads\Calderon Samples\Fraction 1"
-
-# Output directory for figures and results in excel
-outdir = rf"{direct}\Results"
-
-
+#-----------------------------------------------------------------------------
+# Utility and Read Functions
+#-----------------------------------------------------------------------------
 def read_spc_dir(file_paths):
     """
     Read all spc files in a directory and put into a single Pandas DataFrame.
@@ -100,7 +98,7 @@ def best_ATRFTIR_spec(file_paths):
     # return series with only the selected spectrum and name from column name
     return samp
 
-def best_spectrum(dictionary, base, plot):
+def best_spectrum(dictionary, base, plot, outdir=None):
     """
     
 
@@ -188,9 +186,16 @@ def best_spectrum(dictionary, base, plot):
     # baseline = True
     # vers = 'ftir'
     
+    # figures per sample go in <outdir>/best; None disables saving
+    figdir = None
+    if outdir is not None:
+        figdir = Path(outdir) / "best"
+        figdir.mkdir(parents=True, exist_ok=True)
+        figdir = str(figdir)  # scm.amIPO4area concatenates strings
+
     for column in df_spc.columns[:-1]: # skip the last column which is Wavelength
-    
-        amIPO4area = scm.amIPO4area(df_spc, 'Wavelength', column, smooth=True, plot=plot, savefigdir= outdir + r"\best")
+
+        amIPO4area = scm.amIPO4area(df_spc, 'Wavelength', column, smooth=True, plot=plot, savefigdir=figdir)
         # cp         = scm.cp_ratio(df_spc, 'Wavelength', column, vers='ftir', base=base, smooth=True, plot=plot, savefigdir=None) #r'C:\Users\arman\Desktop\Results\best')
         # amIPO4     = scm.amIPO4(df_spc, 'Wavelength', column, vers='ftir', base=base, smooth=True, plot=plot, savefigdir=None) #r'C:\Users\arman\Desktop\Results\best')
         
@@ -213,36 +218,9 @@ def best_spectrum(dictionary, base, plot):
         
     return ind_df, df_spc
 
-if direct.endswith("\\"):
-    file_paths = glob.glob(direct + '*.spc')
-elif not direct.endswith("\\"):
-    file_paths = glob.glob(direct + '\\*.spc')
-    
-# group if same sample
-samps = {}
-
-for file in file_paths:
-    # match sample name
-    samp_name = re.search(r'([^\\]+)\srep\s\d+\.SPC$', file).group(1)
-    
-    # add sample name and file path to dictionary
-    samps[samp_name] = [f for f in file_paths if samp_name in f]
-    
-indices, samps = best_spectrum(samps, base=False, plot=True)
-
-for samp in samps.iloc[:,:16]:
-    fig, ax = plt.subplots()
-    
-    ax.plot(samps[samp], color='k', linewidth=0.5)
-    ax.set_title(samp)
-    ax.invert_xaxis()
-    ax.set_xlabel('Wavenumber (cm$^{-1}$)')
-    ax.set_ylabel('Absorbance')
-    
-    plt.savefig(outdir + "\\" +  samp)
-
-
+#-----------------------------------------------------------------------------
 # Models
+#-----------------------------------------------------------------------------
 def AmIPO4area_logit(value):
     exp = -4.45 + (30.13*value)
     odds = np.exp(exp)
@@ -263,14 +241,54 @@ def AmIPO4area_qty(value):
     print(predict)
     return np.exp(predict)
 
+#-----------------------------------------------------------------------------
 
-# add values to indices df
-indices['Allele Logit Prob'] = indices['AmIPO4area'].apply(AmIPO4area_logit)
-indices['Allele Threshold']  = indices['AmIPO4area'].apply(AmIPO4area_thresh)  
-indices['Qty Estimate'] = indices['AmIPO4area'].apply(AmIPO4area_qty)
+if __name__ == "__main__":
+    # env.json (next to this file) holds the data directory path
+    env_path = Path(__file__).resolve().parent / "env.json"
+    with open(env_path, 'r') as f:
+        direct = Path(json.load(f)["data_path"])
 
-# output results to a table
-with pd.ExcelWriter(outdir + "\\" + 'Results.xlsx') as writer:
-   indices.to_excel(writer, sheet_name='Sheet1')
+    # Output directory for figures and results in excel
+    outdir = direct / "Results"
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    # case-insensitive match since instrument files use .SPC
+    file_paths = sorted(p for p in direct.iterdir() if p.suffix.lower() == '.spc')
+
+    # group replicates by sample name; exact grouping so "Sample 1" does not
+    # also pick up "Sample 10"
+    samps = {}
+
+    for file in file_paths:
+        match = re.search(r'^(.+?)\srep\s\d+$', file.stem, flags=re.IGNORECASE)
+        if match is None:
+            print(f"Skipping unrecognized filename: {file.name}")
+            continue
+        samps.setdefault(match.group(1), []).append(str(file))
+
+    indices, samps = best_spectrum(samps, base=False, plot=True, outdir=outdir)
+
+    for samp in samps.iloc[:,:16]:
+        fig, ax = plt.subplots()
+
+        ax.plot(samps[samp], color='k', linewidth=0.5)
+        ax.set_title(samp)
+        ax.invert_xaxis()
+        ax.set_xlabel('Wavenumber (cm$^{-1}$)')
+        ax.set_ylabel('Absorbance')
+
+        fig.savefig(outdir / f"{samp}.png")
+        plt.close(fig)
+
+    
+    # add values to indices df
+    indices['Allele Logit Prob'] = indices['AmIPO4area'].apply(AmIPO4area_logit)
+    indices['Allele Threshold']  = indices['AmIPO4area'].apply(AmIPO4area_thresh)  
+    indices['Qty Estimate'] = indices['AmIPO4area'].apply(AmIPO4area_qty)
+    
+    # output results to a table
+    with pd.ExcelWriter(outdir / 'Results.xlsx') as writer:
+       indices.to_excel(writer, sheet_name='Sheet1')
 
 
